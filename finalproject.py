@@ -153,11 +153,21 @@ stadiums = (newlst[1::5])
 stadiumlst= []
 
 for name in stadiums:
-	stadiumlst.append([name])
+	if name == "Soccer City":
+		stadiumlst.append(['FNB Stadium'])
+	if name == "Tiger Stadium":
+		stadiumlst.append(['LSU Stadium'])
+	if name == 'Castelao':
+		stadiumlst.append(['Castelao Stadium'])
+	if name == 'Citrus Bowl':
+		stadiumlst.append(['Camping World Stadium'])
+	else:
+		stadiumlst.append([name])
 
 
 def get_coordinates(lst):
-	if lst[0] in Maps_Diction:
+	
+	if lst[0][0] in Maps_Diction:
 		print ('Cached!')
 		return (Maps_Diction)
 
@@ -165,11 +175,11 @@ def get_coordinates(lst):
 		print ('Requesting Google Maps API')
 
 		coord_url = 'https://maps.googleapis.com/maps/api/place/textsearch/json?query='
-		key = 'AIzaSyDvkb3NPsQOYbPXbxHdseUGPaSY6F_d-UE'
+		key = 'AIzaSyDHTfdgSbGWNqXYGAUunwjcntZIslunJds'
 
 		stadiumandcoord = []
 
-		for name in lst[:4]:
+		for name in lst:
 			stadium = name[0]
 
 			url = coord_url + stadium + '&key=' + key 
@@ -207,7 +217,7 @@ def get_coordinates(lst):
 
 			finallst.append(group)
 		
-			Maps_Diction[group[0]] = {'Coordinates': group[1], 'TimeZone': group[2]}
+			Maps_Diction[group[0]] = {'Coordinates': group[1], 'TimeZone': group[2], 'Data': data}
 
 		try:
 			mapsdump = json.dumps(Maps_Diction)
@@ -218,9 +228,9 @@ def get_coordinates(lst):
 		except:
 			return ('Invalid Request')
 		
-			
 
 
+print (get_coordinates(stadiumlst))
 
 
 
