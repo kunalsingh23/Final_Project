@@ -1,14 +1,12 @@
 import requests
 import json
 import sqlite3
-
 import plotly
 from plotly.graph_objs import Bar, Layout #, Scatter
 from plotly.offline import plot
 import plotly.graph_objs as go
 import plotly.plotly as py
 from bs4 import BeautifulSoup
-
 # 													PART 1, FACEBOOK API
 
 fb_token = 'EAACEdEose0cBAJ8EbTBHTnQBjWSiAivAFryBxAtpZAlRVM7VvCLgcn4gr7lZAfnUkwlpUuFLVDpZCTUTjUweZCuTm1ncOmbGjxnIY4tqT4MGbHgADnY2BaM500zuMribCgOeI9YfsHK60hZCbNrMMUxjZBxV1XorWFG8dBkbCsoT97a6zk6yiitwlGXX07qrMZD'
@@ -150,34 +148,39 @@ newlst = (newlst[5:])
 
 stadiums = (newlst[1::5])
 
-stadiumlst= []
+stadiumlzt = []
 
 for name in stadiums:
-	if name == "Soccer City":
-		stadiumlst.append(['FNB Stadium'])
-	if name == "Tiger Stadium":
-		stadiumlst.append(['LSU Stadium'])
-	if name == 'Castelao':
-		stadiumlst.append(['Castelao Stadium'])
-	if name == 'Citrus Bowl':
-		stadiumlst.append(['Camping World Stadium'])
-	else:
-		stadiumlst.append([name])
+	if (name != 'Soccer City') and (name != "Tiger Stadium") and (name != 'Castelao') and (name != 'Citrus Bowl') and (name != 'Stadio delle Alpi'):
+		stadiumlzt.append([name])
+	elif name == 'Soccer City':
+		stadiumlzt.append(['FNB Stadium'])
+	elif name == "Tiger Stadium":
+		stadiumlzt.append(['LSU Stadium'])
+	elif name == 'Castelao':
+		stadiumlzt.append(['Castelao Stadium'])
+	elif name == 'Citrus Bowl':
+		stadiumlzt.append(['Camping World Stadium'])
+	elif name == 'Stadio delle Alpi':
+		stadiumlzt.append(['Stadio delle Alpi Torino'])
 
 
-def get_coordinates(lst):
+
+
+def get_timezone(lst):
 	
-	if lst[0][0] in Maps_Diction:
-		print ('Cached!')
-		return (Maps_Diction)
+	Maps_Diction = (json.loads(open("Maps.json").read()))
+	check = lst[0]
+	check = str(check[0])
 
+	if check in Maps_Diction:
+		print ('Coord Cached!')
+				
 	else:
 		print ('Requesting Google Maps API')
 
 		coord_url = 'https://maps.googleapis.com/maps/api/place/textsearch/json?query='
-		key = 'AIzaSyDHTfdgSbGWNqXYGAUunwjcntZIslunJds'
-
-		stadiumandcoord = []
+		key = 'AIzaSyA08it_eqs8q8Uy5sLVatGf5qbyqoE-fHc'
 
 		for name in lst:
 			stadium = name[0]
@@ -194,43 +197,67 @@ def get_coordinates(lst):
 			coord = (lat + ',' + lng)
 
 			name.append(coord)
-			stadiumandcoord.append(name)
-	
-		timezone_url = 'https://maps.googleapis.com/maps/api/timezone/json?location='
-		key2 = 'AIzaSyA3xKekqx--NmE0ibDgXLgeC4lxKobVcC8'
-		timestamp = '1512475200'
-		finallst = []
-
-		for group in stadiumandcoord:
-
-			coord = group[1]
-
-			url = timezone_url + coord + '&timestamp=' + timestamp + '&key=' + key2
-
-			data = requests.get(url)
-
-			data = data.json()
-
-			timezone = data['timeZoneName']
-
-			group.append(timezone)
-
-			finallst.append(group)
-		
-			Maps_Diction[group[0]] = {'Coordinates': group[1], 'TimeZone': group[2], 'Data': data}
+			
+			Maps_Diction[name[0]] = {'Coordinates': name[1]}
 
 		try:
 			mapsdump = json.dumps(Maps_Diction)
 			fw = open(Maps_Cache, 'w')
 			fw.write(mapsdump)
-			return (mapsdump)
 			fw.close()
 		except:
 			return ('Invalid Request')
+
+	timezone_url = 'https://maps.googleapis.com/maps/api/timezone/json?location='
+	key2 = 'AIzaSyCbkRfoH9mPRUBtAmYVdug22fPRzQlf1hA'
+	timestamp = '1512475200'
+
+	if len(Maps_Diction[check]['Coordinates']) > 1:
+		print ('Timezone Cached!')
+		return (Maps_Diction)
+
+
+	for x in Maps_Diction:
+
+		stadium = x
+		coord = Maps_Diction[x]['Coordinates']
+
+		url = timezone_url + coord + '&timestamp=' + timestamp + '&key=' + key2
+
+		data = requests.get(url)
+
+		data = data.json()
+
+		timezone = data['timeZoneName']
 		
+		Maps_Diction[x] = {'Coordinates': coord, 'TimeZone': timezone, 'Data': data}
+
+	try:
+		mapsdump = json.dumps(Maps_Diction)
+		fw = open(Maps_Cache, 'w')
+		fw.write(mapsdump)
+		return (mapsdump)
+		fw.close()
+	except:
+		return ('Invalid Request')
+
+stadium_timezones = (get_timezone(stadiumlzt))
 
 
-print (get_coordinates(stadiumlst))
+timezonecount = {}
+
+for x in stadium_timezones:
+	if (stadium_timezones[x]['TimeZone']) not in timezonecount:
+		timezonecount[stadium_timezones[x]['TimeZone']] = 1
+	else:
+		timezonecount[stadium_timezones[x]['TimeZone']] += 1
+
+cur.execute('DROP TABLE IF EXISTS Maps_Data')
+
+cur.execute('''CREATE TABLE Facebook_Data (name TEXT, id INTEGER, time TIMESTAMP)''') #making table for all facebook data
+
+
+
 
 
 
