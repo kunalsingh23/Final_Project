@@ -25,7 +25,7 @@ def request_fb():
 	request = 'me?fields=likes.limit(100)'  #used the Graph API, change the request to get different data 
 	
 	if request in FB_Diction:
-		print ('Cached!')
+		print ('Facebook Cached!')
 		return (FB_Diction[request])
 
 	else:
@@ -116,7 +116,7 @@ count_months = sorted(count_months, reverse = True)
 
 
 
-#										PART 2, GOOGLE MAPS API
+#													PART 2, GOOGLE MAPS API
 
 
 Maps_Cache = "Maps.json"
@@ -165,16 +165,14 @@ for name in stadiums:
 		stadiumlzt.append(['Stadio delle Alpi Torino'])
 
 
-
-
 def get_timezone(lst):
 	
 	Maps_Diction = (json.loads(open("Maps.json").read()))
 	check = lst[0]
 	check = str(check[0])
 
-	if check in Maps_Diction:
-		print ('Coord Cached!')
+	if len(Maps_Diction) == 98:
+		print ('Coordinates Cached!')
 				
 	else:
 		print ('Requesting Google Maps API')
@@ -212,7 +210,7 @@ def get_timezone(lst):
 	key2 = 'AIzaSyCbkRfoH9mPRUBtAmYVdug22fPRzQlf1hA'
 	timestamp = '1512475200'
 
-	if len(Maps_Diction[check]['Coordinates']) > 1:
+	if len(Maps_Diction[check]) > 1:
 		print ('Timezone Cached!')
 		return (Maps_Diction)
 
@@ -243,7 +241,6 @@ def get_timezone(lst):
 
 stadium_timezones = (get_timezone(stadiumlzt))
 
-
 timezonecount = {}
 
 for x in stadium_timezones:
@@ -252,16 +249,89 @@ for x in stadium_timezones:
 	else:
 		timezonecount[stadium_timezones[x]['TimeZone']] += 1
 
+
 cur.execute('DROP TABLE IF EXISTS Maps_Data')
 
-cur.execute('''CREATE TABLE Facebook_Data (name TEXT, id INTEGER, time TIMESTAMP)''') #making table for all facebook data
+cur.execute('''CREATE TABLE Maps_Data (stadium TEXT, coordinates INTEGER, timezone TIMESTAMP)''')
+
+for x in stadium_timezones:
+	cur.execute("INSERT OR IGNORE INTO Maps_Data (stadium, coordinates, timezone) VALUES (?, ?, ?)",
+		(x, (stadium_timezones[x]['Coordinates']), (stadium_timezones[x]['TimeZone'])))
+
+conn.commit()
+
+
+#														PART 3, ITUNES API
+
+
+iTunes_Cache = "iTunes_cache.json"
+try:
+    iTunes_file = open(iTunes_Cache, 'r')
+    iTunes_contents = iTunes_file.read()
+    iTunes_file.close()
+    iTunes_Diction = json.loads(iTunes_contents)
+except:
+    iTunes_Diction = {}
+
+
+def iTunes(artist):
+	if artist in iTunes_Diction:
+		print ('iTunes Cached!')
+		return (iTunes_Diction)
+
+	else:
+		print ('Requesting iTunes')
+	
+		x = requests.get('http://itunes.apple.com/search', params = {
+    		"term": artist,
+    		"entity": "song",
+    		"limit": "100" })
+
+		itunesdata = x.json()
+
+		try:
+			iTunes_Diction[artist] = itunesdata    
+			iTunesdump = json.dumps(iTunes_Diction)
+			fw = open(iTunes_Cache, 'w')
+			fw.write(iTunesdump)
+			return (iTunesdump)
+			fw.close()
+
+		except:
+			return ('Problem Caching')
+
+
+
+iTunesData = (iTunes('Drake'))
+
+mydata = {}
+
+for y in (iTunesData['Drake']['results']):
+	
+	mydata[y['trackName']] = {'TrackLength': (y['trackTimeMillis'])/1000, 'Release Year': y['releaseDate']}
+
+lengths = []
+years = []
+
+for x in mydata:
+	lengths.append(mydata[x]['TrackLength'])
+	two = (mydata[x]['Release Year'])
+	two = two.split('T')[0]
+	two = int(two[:4])
+	years.append(two)
 
 
 
 
+cur.execute('DROP TABLE IF EXISTS iTunes_Data')
 
+cur.execute('''CREATE TABLE iTunes_Data (song TEXT, length INTEGER, created_time TIMESTAMP)''')
 
+for x in (iTunesData['Drake']['results']):
+	cur.execute("INSERT OR IGNORE INTO iTunes_Data (song, length, created_time) VALUES (?, ?, ?)",
+		(x['trackName'], (x['trackTimeMillis']/1000), (x['releaseDate'])))
 
+conn.commit()
 
 
 
