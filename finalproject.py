@@ -546,11 +546,11 @@ for x in lot:
 
 #uncomment for below visualization, should open in plotly on your computer (offline plot.ly)
 
-# plotly.offline.plot({
-# 	"data": [Scatter(x= captagusers , y= traffic, mode = 'markers')],
-# 	"layout": Layout(title = 'Correlation Between Caption Length and Traffic on Instagram',
-# 					xaxis = dict(title='Caption Length', range = [0,160]),
-# 					yaxis = dict(title = 'Traffic', range = [150,340]))})
+plotly.offline.plot({
+	"data": [Scatter(x= captagusers , y= traffic, mode = 'markers')],
+	"layout": Layout(title = 'Correlation Between Caption Length and Traffic on Instagram',
+					xaxis = dict(title='Caption Length', range = [0,160]),
+					yaxis = dict(title = 'Traffic', range = [150,340]))})
 
 
 
